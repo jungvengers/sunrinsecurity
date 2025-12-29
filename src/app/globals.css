@@ -1,0 +1,208 @@
+@import "tailwindcss";
+
+:root {
+  --background: 0 0% 4%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 8%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 8%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 0 0% 4%;
+  --secondary: 0 0% 12%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 14%;
+  --muted-foreground: 0 0% 55%;
+  --accent: 0 0% 18%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62% 55%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 16%;
+  --input: 0 0% 16%;
+  --ring: 0 0% 98%;
+  --radius: 0.75rem;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: "Pretendard Variable", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: hsl(var(--foreground) / 0.2);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+.glass {
+  background: hsl(var(--card) / 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border));
+}
+
+.hover-lift {
+  transition: transform 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+.prose {
+  color: hsl(var(--foreground));
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  color: hsl(var(--foreground));
+  font-weight: 700;
+  margin-top: 2em;
+  margin-bottom: 0.5em;
+}
+
+.prose h1 { font-size: 2.25rem; }
+.prose h2 { font-size: 1.75rem; }
+.prose h3 { font-size: 1.5rem; }
+
+.prose p {
+  margin-bottom: 1.25em;
+  line-height: 1.8;
+}
+
+.prose ul,
+.prose ol {
+  margin-left: 1.5em;
+  margin-bottom: 1.25em;
+}
+
+.prose li {
+  margin-bottom: 0.5em;
+}
+
+.prose code {
+  background: hsl(var(--secondary));
+  padding: 0.2em 0.4em;
+  border-radius: 0.25em;
+  font-size: 0.9em;
+}
+
+.prose pre {
+  background: hsl(var(--secondary));
+  padding: 1em;
+  border-radius: 0.75em;
+  overflow-x: auto;
+  margin-bottom: 1.25em;
+  border: 1px solid hsl(var(--border));
+}
+
+.prose pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.prose blockquote {
+  border-left: 2px solid hsl(var(--foreground));
+  padding-left: 1em;
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 1.25em;
+}
+
+.prose img {
+  border-radius: 0.75em;
+  margin: 1.5em 0;
+}
+
+.prose hr {
+  border-color: hsl(var(--border));
+  margin: 2em 0;
+}
+
+.tiptap-content .ProseMirror {
+  outline: none;
+}
+
+.tiptap-content .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: hsl(var(--muted-foreground));
+  pointer-events: none;
+  height: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+
+.btn-primary {
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: opacity 0.2s ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background: hsl(var(--secondary));
+  color: hsl(var(--foreground));
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border));
+  transition: background 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: hsl(var(--muted));
+}

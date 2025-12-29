@@ -1,0 +1,269 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum CycleStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  REVIEWING
+  ALLOCATING
+  COMPLETED
+}
+
+enum RoundStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  REVIEWING
+  ALLOCATING
+  COMPLETED
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  ALLOCATED
+}
+
+enum QuestionType {
+  TEXT
+  TEXTAREA
+  SELECT
+  MULTISELECT
+  CHECKBOX
+  RADIO
+  FILE
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  studentId     String?
+  grade         Int?
+  classNum      Int?
+  number        Int?
+  role          UserRole  @default(STUDENT)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  applications  Application[]
+  clubAdmins    ClubAdmin[]
+  applicantRanks ApplicantRank[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Club {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?  @db.Text
+  curriculum  String?  @db.Text
+  logoUrl     String?
+  socialLinks Json?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  projects         Project[]
+  applicationForms ApplicationForm[]
+  applications     Application[]
+  clubAdmins       ClubAdmin[]
+  applicantRanks   ApplicantRank[]
+  roundClubConfigs RoundClubConfig[]
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  thumbnail   String?
+  content     Json?
+  category    String?
+  participants String?
+  clubId      String?
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  club Club? @relation(fields: [clubId], references: [id], onDelete: SetNull)
+}
+
+model RecruitmentCycle {
+  id              String      @id @default(cuid())
+  year            Int
+  name            String
+  status          CycleStatus @default(DRAFT)
+  maxApplications Int         @default(3)
+  viewStartDate   DateTime?   // 지원서 공개일
+  applyStartDate  DateTime?   // 지원 시작일
+  applyEndDate    DateTime?   // 지원 마감일
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  rounds     RecruitmentRound[]
+  clubAdmins ClubAdmin[]
+}
+
+model RecruitmentRound {
+  id          String      @id @default(cuid())
+  cycleId     String
+  roundNumber Int
+  name        String
+  status      RoundStatus @default(DRAFT)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  cycle            RecruitmentCycle  @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  applicationForms ApplicationForm[]
+  applications     Application[]
+  roundClubConfigs RoundClubConfig[]
+
+  @@unique([cycleId, roundNumber])
+}
+
+model RoundClubConfig {
+  id         String   @id @default(cuid())
+  roundId    String
+  clubId     String
+  maxMembers Int
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  round RecruitmentRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  club  Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, clubId])
+}
+
+model ApplicationForm {
+  id        String   @id @default(cuid())
+  clubId    String
+  roundId   String
+  questions Json
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  club         Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  round        RecruitmentRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@unique([clubId, roundId])
+}
+
+model Application {
+  id        String            @id @default(cuid())
+  userId    String
+  clubId    String
+  roundId   String
+  formId    String
+  priority  Int
+  status    ApplicationStatus @default(PENDING)
+  answers   Json
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club          Club              @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  round         RecruitmentRound  @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  form          ApplicationForm   @relation(fields: [formId], references: [id], onDelete: Cascade)
+  applicantRank ApplicantRank?
+
+  @@unique([userId, clubId, roundId])
+}
+
+model ApplicantRank {
+  id            String   @id @default(cuid())
+  applicationId String   @unique
+  clubId        String
+  rank          Int?
+  note          String?  @db.Text
+  rankedById    String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  club        Club        @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  rankedBy    User        @relation(fields: [rankedById], references: [id], onDelete: Cascade)
+}
+
+model ClubAdmin {
+  id        String   @id @default(cuid())
+  userId    String
+  clubId    String
+  cycleId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club  Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  cycle RecruitmentCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clubId, cycleId])
+}
+
+model SiteSettings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

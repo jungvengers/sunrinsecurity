@@ -1,0 +1,11 @@
+Dockerfile
+.dockerignore
+node_modules
+npm-debug.log
+pnpm-debug.log
+.next
+.git
+.gitignore
+*.md
+.env*
+!.env.example
