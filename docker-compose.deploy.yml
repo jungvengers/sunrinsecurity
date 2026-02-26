@@ -1,0 +1,104 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sunrinsecurity-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      TZ: Asia/Seoul
+      POSTGRES_USER: ${POSTGRES_USER:-sunrinsecurity}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sunrinsecurity}
+      POSTGRES_DB: ${POSTGRES_DB:-sunrinsecurity}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sunrinsecurity}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sunrinsecurity-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: sunrinsecurity-minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sunrinsecurity-network
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: sunrinsecurity-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-sunrinsecurity}
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
+      mc mb myminio/$${MINIO_BUCKET} --ignore-existing;
+      mc anonymous set download myminio/$${MINIO_BUCKET};
+      echo 'MinIO bucket created and configured!';
+      exit 0;
+      "
+    networks:
+      - sunrinsecurity-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sunrinsecurity-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      TZ: Asia/Seoul
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sunrinsecurity}:${POSTGRES_PASSWORD:-sunrinsecurity}@postgres:5432/${POSTGRES_DB:-sunrinsecurity}?schema=public
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-your-secret-key-change-in-production}
+      AUTH_TRUST_HOST: "true"
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-sunrinsecurity}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    networks:
+      - sunrinsecurity-network
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  sunrinsecurity-network:
+    driver: bridge
