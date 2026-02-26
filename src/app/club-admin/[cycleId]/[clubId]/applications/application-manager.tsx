@@ -126,7 +126,10 @@ function ApplicationRow({
     await updateApplicationStatus(application.id, status);
   };
 
-  const answers = application.answers as Record<string, string>;
+  const answers = (application.answers || {}) as Record<
+    string,
+    string | string[] | undefined
+  >;
   const questions = (application.form?.questions as Array<{
     id: string;
     label: string;
@@ -216,7 +219,13 @@ function ApplicationRow({
                     {q.label}
                   </p>
                   <p className="bg-[hsl(var(--background))] rounded-lg p-3">
-                    {answers[`answer_${q.id}`] || "-"}
+                    {(() => {
+                      const value = answers[q.id] ?? answers[`answer_${q.id}`];
+                      if (Array.isArray(value)) {
+                        return value.join(", ");
+                      }
+                      return value || "-";
+                    })()}
                   </p>
                 </div>
               ))}

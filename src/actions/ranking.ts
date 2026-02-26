@@ -126,6 +126,10 @@ export async function allocateMembers(cycleId: string) {
     return { success: false, error: "배분 가능한 라운드가 없습니다." };
   }
 
+  if (cycle.status === "COMPLETED") {
+    return { success: false, error: "완료된 사이클은 배분할 수 없습니다." };
+  }
+
   const round = cycle.rounds[0];
   const roundId = round.id;
 
@@ -214,38 +218,27 @@ export async function allocateMembers(cycleId: string) {
     }
   }
 
-  for (const allocation of allocations) {
-    await prisma.application.update({
-      where: { id: allocation.id },
-      data: { status: "ALLOCATED" },
-    });
-  }
+  const allocatedIds = allocations.map((allocation) => allocation.id);
+  const allocatedIdSet = new Set(allocatedIds);
+  const rejectedIds = applications
+    .filter((app) => !allocatedIdSet.has(app.id))
+    .map((app) => app.id);
 
-  const rejectedApps = applications.filter(
-    (app) =>
-      !allocations.some((a) => a.id === app.id) &&
-      allocatedUsers.has(app.userId)
-  );
+  await prisma.$transaction(async (tx) => {
+    if (allocatedIds.length > 0) {
+      await tx.application.updateMany({
+        where: { id: { in: allocatedIds } },
+        data: { status: "ALLOCATED" },
+      });
+    }
 
-  for (const app of rejectedApps) {
-    await prisma.application.update({
-      where: { id: app.id },
-      data: { status: "REJECTED" },
-    });
-  }
-
-  const unallocatedApps = applications.filter(
-    (app) =>
-      !allocations.some((a) => a.id === app.id) &&
-      !allocatedUsers.has(app.userId)
-  );
-
-  for (const app of unallocatedApps) {
-    await prisma.application.update({
-      where: { id: app.id },
-      data: { status: "REJECTED" },
-    });
-  }
+    if (rejectedIds.length > 0) {
+      await tx.application.updateMany({
+        where: { id: { in: rejectedIds } },
+        data: { status: "REJECTED" },
+      });
+    }
+  });
 
   revalidatePath(`/admin/applications/${cycleId}`);
   return { success: true, allocated: allocations.length };

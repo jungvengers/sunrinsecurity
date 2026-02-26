@@ -3,18 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   images: {
-    remotePatterns: [
-      {
-        protocol: "http",
-        hostname: "localhost",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "**",
-        pathname: "/**",
-      },
-    ],
+    // Disable built-in optimizer to reduce remote image attack surface.
+    unoptimized: true,
   },
 };
 

@@ -9,21 +9,23 @@ export default async function ProjectPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const params = await searchParams;
-  const page = parseInt(params.page || "1");
+  const requestedPage = Number(params.page ?? "1");
   const perPage = 9;
 
-  const [projects, total] = await Promise.all([
-    prisma.project.findMany({
-      where: { isPublished: true },
-      include: { club: true },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * perPage,
-      take: perPage,
-    }),
-    prisma.project.count({ where: { isPublished: true } }),
-  ]);
+  const total = await prisma.project.count({ where: { isPublished: true } });
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  const page =
+    Number.isInteger(requestedPage) && requestedPage > 0
+      ? Math.min(requestedPage, totalPages)
+      : 1;
 
-  const totalPages = Math.ceil(total / perPage);
+  const projects = await prisma.project.findMany({
+    where: { isPublished: true },
+    include: { club: true },
+    orderBy: { createdAt: "desc" },
+    skip: (page - 1) * perPage,
+    take: perPage,
+  });
 
   return (
     <>

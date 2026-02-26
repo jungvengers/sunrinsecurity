@@ -140,15 +140,22 @@ export function ClubFormBuilder({
   const handleSave = async () => {
     if (isReadOnly) return;
     setSaving(true);
-    await createOrUpdateForm(roundId, clubId, questions);
+    const result = await createOrUpdateForm(roundId, clubId, questions);
     setSaving(false);
+    if (!result.success) {
+      alert(result.error ?? "지원서 양식 저장에 실패했습니다.");
+    }
   };
 
   const handleDelete = async () => {
     if (isReadOnly) return;
     if (existingForm && confirm("정말 삭제하시겠습니까? 모든 질문이 삭제됩니다.")) {
-      await deleteForm(existingForm.id);
-      setQuestions([]);
+      const result = await deleteForm(existingForm.id);
+      if (result?.success) {
+        setQuestions([]);
+      } else {
+        alert(result?.error ?? "지원서 양식 삭제에 실패했습니다.");
+      }
     }
   };
 

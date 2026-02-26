@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
 
 export async function submitApplication(formData: FormData) {
   const session = await auth();
@@ -18,10 +19,14 @@ export async function submitApplication(formData: FormData) {
   const roundId = formData.get("roundId") as string;
   const clubId = formData.get("clubId") as string;
   const formId = formData.get("formId") as string;
-  const priority = parseInt(formData.get("priority") as string);
+  const priority = Number(formData.get("priority"));
 
-  if (!roundId || !clubId || !formId || !priority) {
+  if (!roundId || !clubId || !formId) {
     return { success: false, error: "필수 정보가 누락되었습니다." };
+  }
+
+  if (!Number.isInteger(priority) || priority < 1) {
+    return { success: false, error: "지망 순위가 올바르지 않습니다." };
   }
 
   const round = await prisma.recruitmentRound.findUnique({
@@ -60,6 +65,10 @@ export async function submitApplication(formData: FormData) {
     return { success: false, error: "최대 지원 가능 개수를 초과했습니다." };
   }
 
+  if (priority > round.cycle.maxApplications) {
+    return { success: false, error: "지망 순위가 허용 범위를 초과했습니다." };
+  }
+
   const existingForClub = await prisma.application.findFirst({
     where: {
       userId: session.user.id,
@@ -72,12 +81,45 @@ export async function submitApplication(formData: FormData) {
     return { success: false, error: "이미 해당 동아리에 지원했습니다." };
   }
 
-  const form = await prisma.applicationForm.findUnique({
-    where: { id: formId },
+  const existingPriority = await prisma.application.findFirst({
+    where: {
+      userId: session.user.id,
+      roundId,
+      priority,
+    },
+  });
+
+  if (existingPriority) {
+    return { success: false, error: "이미 해당 지망 순위로 지원했습니다." };
+  }
+
+  const form = await prisma.applicationForm.findFirst({
+    where: {
+      id: formId,
+      roundId,
+      clubId,
+      isActive: true,
+    },
   });
 
   if (!form) {
-    return { success: false, error: "지원서 양식을 찾을 수 없습니다." };
+    return {
+      success: false,
+      error: "지원서 양식이 유효하지 않거나 비활성화되었습니다.",
+    };
+  }
+
+  const roundClub = await prisma.roundClubConfig.findUnique({
+    where: {
+      roundId_clubId: {
+        roundId,
+        clubId,
+      },
+    },
+  });
+
+  if (!roundClub || !roundClub.isActive) {
+    return { success: false, error: "해당 동아리는 현재 모집 대상이 아닙니다." };
   }
 
   interface Question {
@@ -85,19 +127,26 @@ export async function submitApplication(formData: FormData) {
     required: boolean;
   }
 
-  const questions = form.questions as unknown as Question[];
+  const questions = Array.isArray(form.questions)
+    ? (form.questions as unknown as Question[])
+    : [];
   const answers: Record<string, string | string[]> = {};
 
   for (const question of questions) {
-    const answer = formData.getAll(`answer_${question.id}`);
-    if (
-      question.required &&
-      (!answer || answer.length === 0 || answer[0] === "")
-    ) {
+    const rawAnswers = formData
+      .getAll(`answer_${question.id}`)
+      .map((value) => String(value).trim())
+      .filter((value) => value.length > 0);
+
+    if (question.required && rawAnswers.length === 0) {
       return { success: false, error: "필수 질문에 답변해주세요." };
     }
-    answers[question.id] =
-      answer.length === 1 ? (answer[0] as string) : (answer as string[]);
+
+    if (rawAnswers.length === 1) {
+      answers[question.id] = rawAnswers[0];
+    } else if (rawAnswers.length > 1) {
+      answers[question.id] = rawAnswers;
+    }
   }
 
   try {
@@ -116,6 +165,12 @@ export async function submitApplication(formData: FormData) {
     revalidatePath("/apply");
     return { success: true };
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return { success: false, error: "중복 지원이 감지되었습니다." };
+    }
     console.error("Application submission error:", error);
     return { success: false, error: "지원서 제출 중 오류가 발생했습니다." };
   }

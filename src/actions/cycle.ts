@@ -274,22 +274,30 @@ export async function updateRoundClubConfig(
     return { success: false, error: "라운드를 찾을 수 없습니다." };
   }
 
-  await prisma.roundClubConfig.deleteMany({
-    where: { roundId },
-  });
+  const activeConfigs = configs
+    .filter((config) => config.isActive)
+    .map((config) => ({
+      roundId,
+      clubId: config.clubId,
+      maxMembers: Math.floor(config.maxMembers),
+      isActive: true,
+    }));
 
-  for (const config of configs) {
-    if (config.isActive) {
-      await prisma.roundClubConfig.create({
-        data: {
-          roundId,
-          clubId: config.clubId,
-          maxMembers: config.maxMembers,
-          isActive: true,
-        },
+  if (activeConfigs.some((config) => config.maxMembers < 1)) {
+    return { success: false, error: "최대 인원은 1명 이상이어야 합니다." };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.roundClubConfig.deleteMany({
+      where: { roundId },
+    });
+
+    if (activeConfigs.length > 0) {
+      await tx.roundClubConfig.createMany({
+        data: activeConfigs,
       });
     }
-  }
+  });
 
   revalidatePath(`/admin/cycles/${round.cycleId}`);
   return { success: true };
@@ -301,14 +309,16 @@ export async function completeCycle(cycleId: string) {
     return { success: false, error: "권한이 없습니다." };
   }
 
-  await prisma.recruitmentCycle.update({
-    where: { id: cycleId },
-    data: { status: "COMPLETED" },
-  });
+  await prisma.$transaction(async (tx) => {
+    await tx.recruitmentCycle.update({
+      where: { id: cycleId },
+      data: { status: "COMPLETED" },
+    });
 
-  await prisma.recruitmentRound.updateMany({
-    where: { cycleId },
-    data: { status: "COMPLETED" },
+    await tx.recruitmentRound.updateMany({
+      where: { cycleId },
+      data: { status: "COMPLETED" },
+    });
   });
 
   revalidatePath(`/admin/cycles/${cycleId}`);

@@ -73,8 +73,10 @@ services:
     environment:
       TZ: Asia/Seoul
       DATABASE_URL: postgresql://${POSTGRES_USER:-sunrinsecurity}:${POSTGRES_PASSWORD:-sunrinsecurity}@postgres:5432/${POSTGRES_DB:-sunrinsecurity}?schema=public
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-your-secret-key-change-in-production}
+      AUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      AUTH_SECRET: ${NEXTAUTH_SECRET:-your-secret-key-change-in-production}
       AUTH_TRUST_HOST: "true"
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
@@ -85,6 +87,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET: ${MINIO_BUCKET:-sunrinsecurity}
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost}
+      RUN_DB_MIGRATIONS: ${RUN_DB_MIGRATIONS:-false}
     depends_on:
       postgres:
         condition: service_healthy

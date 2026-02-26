@@ -545,8 +545,12 @@ function RoundCard({
 
   const handleSaveConfigs = async () => {
     setSaving(true);
-    await updateRoundClubConfig(round.id, clubConfigs);
+    const result = await updateRoundClubConfig(round.id, clubConfigs);
     setSaving(false);
+    if (!result.success) {
+      alert(result.error ?? "동아리 설정 저장에 실패했습니다.");
+      return;
+    }
     onToggleEdit();
   };
 
