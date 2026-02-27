@@ -57,9 +57,11 @@ const statusColors: Record<string, string> = {
 export function ClubApplicationManager({
   applications,
   isReadOnly,
+  canChangeStatus,
 }: {
   applications: Application[];
   isReadOnly: boolean;
+  canChangeStatus: boolean;
 }) {
   if (applications.length === 0) {
     return (
@@ -77,7 +79,6 @@ export function ClubApplicationManager({
         <thead>
           <tr className="border-b border-[hsl(var(--border))]">
             <th className="text-left p-4 font-medium">지원자</th>
-            <th className="text-left p-4 font-medium">지망</th>
             <th className="text-left p-4 font-medium">순위</th>
             <th className="text-left p-4 font-medium">상태</th>
             <th className="text-right p-4 font-medium">작업</th>
@@ -89,6 +90,7 @@ export function ClubApplicationManager({
               key={app.id}
               application={app}
               isReadOnly={isReadOnly}
+              canChangeStatus={canChangeStatus}
             />
           ))}
         </tbody>
@@ -100,9 +102,11 @@ export function ClubApplicationManager({
 function ApplicationRow({
   application,
   isReadOnly,
+  canChangeStatus,
 }: {
   application: Application;
   isReadOnly: boolean;
+  canChangeStatus: boolean;
 }) {
   const [rank, setRank] = useState<string>(
     application.applicantRank?.rank?.toString() || ""
@@ -126,14 +130,26 @@ function ApplicationRow({
     await updateApplicationStatus(application.id, status);
   };
 
-  const answers = (application.answers || {}) as Record<
-    string,
-    string | string[] | undefined
-  >;
+  const answers = (application.answers || {}) as Record<string, unknown>;
   const questions = (application.form?.questions as Array<{
     id: string;
     label: string;
   }>) || [];
+
+  const renderAnswer = (questionId: string) => {
+    const value = answers[questionId] ?? answers[`answer_${questionId}`];
+    if (Array.isArray(value)) {
+      return value.join(", ");
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    return "-";
+  };
+
+  const fallbackAnswers = Object.entries(answers)
+    .filter(([key]) => key.startsWith("answer_"))
+    .filter(([key]) => !questions.some((question) => `answer_${question.id}` === key));
 
   return (
     <>
@@ -147,7 +163,6 @@ function ApplicationRow({
             </p>
           </div>
         </td>
-        <td className="p-4">{application.priority}지망</td>
         <td className="p-4">
           <Input
             type="number"
@@ -181,7 +196,7 @@ function ApplicationRow({
                 <ChevronDown className="w-4 h-4" />
               )}
             </Button>
-            {!isReadOnly && (
+            {!isReadOnly && canChangeStatus && (
               <>
                 <Button
                   variant="ghost"
@@ -205,12 +220,17 @@ function ApplicationRow({
                 </Button>
               </>
             )}
+            {!isReadOnly && !canChangeStatus && (
+              <span className="text-xs text-[hsl(var(--muted-foreground))]">
+                마감 후 변경 가능
+              </span>
+            )}
           </div>
         </td>
       </tr>
       {expanded && (
         <tr className="bg-[hsl(var(--secondary))]">
-          <td colSpan={5} className="p-6">
+          <td colSpan={4} className="p-6">
             <div className="space-y-4">
               <h4 className="font-medium">지원서 내용</h4>
               {questions.map((q) => (
@@ -219,16 +239,27 @@ function ApplicationRow({
                     {q.label}
                   </p>
                   <p className="bg-[hsl(var(--background))] rounded-lg p-3">
-                    {(() => {
-                      const value = answers[q.id] ?? answers[`answer_${q.id}`];
-                      if (Array.isArray(value)) {
-                        return value.join(", ");
-                      }
-                      return value || "-";
-                    })()}
+                    {renderAnswer(q.id)}
                   </p>
                 </div>
               ))}
+              {fallbackAnswers.length > 0 && (
+                <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
+                  <p className="text-sm text-[hsl(var(--muted-foreground))]">기타 답변</p>
+                  {fallbackAnswers.map(([key, value]) => (
+                    <div key={key}>
+                      <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">{key}</p>
+                      <p className="bg-[hsl(var(--background))] rounded-lg p-3">
+                        {Array.isArray(value)
+                          ? value.join(", ")
+                          : typeof value === "string"
+                            ? value
+                            : "-"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </td>
         </tr>

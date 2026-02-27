@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { writeAuditLog } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 
@@ -144,8 +145,10 @@ export async function submitApplication(formData: FormData) {
 
     if (rawAnswers.length === 1) {
       answers[question.id] = rawAnswers[0];
+      answers[`answer_${question.id}`] = rawAnswers[0];
     } else if (rawAnswers.length > 1) {
       answers[question.id] = rawAnswers;
+      answers[`answer_${question.id}`] = rawAnswers;
     }
   }
 
@@ -162,6 +165,18 @@ export async function submitApplication(formData: FormData) {
       },
     });
 
+    await writeAuditLog({
+      actorId: session.user.id,
+      actorRole: session.user.role,
+      action: "application.submit",
+      targetType: "Application",
+      metadata: {
+        roundId,
+        clubId,
+        priority,
+      },
+    });
+
     revalidatePath("/apply");
     return { success: true };
   } catch (error) {
@@ -174,4 +189,58 @@ export async function submitApplication(formData: FormData) {
     console.error("Application submission error:", error);
     return { success: false, error: "지원서 제출 중 오류가 발생했습니다." };
   }
+}
+
+export async function cancelApplication(applicationId: string) {
+  const session = await auth();
+  if (!session) {
+    return { success: false, error: "로그인이 필요합니다." };
+  }
+
+  const application = await prisma.application.findUnique({
+    where: { id: applicationId },
+    include: {
+      round: {
+        include: {
+          cycle: true,
+        },
+      },
+    },
+  });
+
+  if (!application) {
+    return { success: false, error: "지원서를 찾을 수 없습니다." };
+  }
+
+  if (application.userId !== session.user.id) {
+    return { success: false, error: "본인 지원서만 취소할 수 있습니다." };
+  }
+
+  const now = new Date();
+  const applyEndDate = application.round.cycle.applyEndDate;
+  if (!applyEndDate || now > applyEndDate) {
+    return { success: false, error: "지원 마감 이후에는 취소할 수 없습니다." };
+  }
+
+  await prisma.application.delete({ where: { id: applicationId } });
+
+  await writeAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "application.cancel",
+    targetType: "Application",
+    targetId: applicationId,
+    metadata: {
+      roundId: application.roundId,
+      clubId: application.clubId,
+    },
+  });
+
+  revalidatePath("/apply");
+  revalidatePath(`/admin/applications/${application.round.cycleId}`);
+  revalidatePath(
+    `/club-admin/${application.round.cycleId}/${application.clubId}/applications`
+  );
+
+  return { success: true };
 }

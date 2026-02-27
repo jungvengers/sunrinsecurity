@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -37,7 +38,7 @@ export async function createProject(formData: FormData): Promise<void> {
     counter++;
   }
 
-  await prisma.project.create({
+  const project = await prisma.project.create({
     data: {
       title,
       slug,
@@ -48,6 +49,15 @@ export async function createProject(formData: FormData): Promise<void> {
       content: content ? JSON.parse(content) : null,
       isPublished,
     },
+  });
+
+  await writeAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "project.create",
+    targetType: "Project",
+    targetId: project.id,
+    metadata: { title, slug, isPublished },
   });
 
   revalidatePath("/admin/projects");
@@ -82,6 +92,15 @@ export async function updateProject(id: string, formData: FormData): Promise<voi
     },
   });
 
+  await writeAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "project.update",
+    targetType: "Project",
+    targetId: id,
+    metadata: { title, isPublished },
+  });
+
   revalidatePath("/admin/projects");
   revalidatePath("/project");
   redirect("/admin/projects");
@@ -95,6 +114,14 @@ export async function deleteProject(id: string): Promise<void> {
 
   await prisma.project.delete({
     where: { id },
+  });
+
+  await writeAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "project.delete",
+    targetType: "Project",
+    targetId: id,
   });
 
   revalidatePath("/admin/projects");

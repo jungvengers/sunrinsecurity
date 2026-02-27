@@ -130,7 +130,7 @@ export function ProjectForm({ project, clubs }: ProjectFormProps) {
               type="checkbox"
               name="isPublished"
               id="isPublished"
-              defaultChecked={project?.isPublished ?? false}
+              defaultChecked={project?.isPublished ?? true}
               className="w-4 h-4 rounded border-[hsl(var(--border))] bg-transparent"
             />
             <label

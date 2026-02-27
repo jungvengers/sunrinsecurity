@@ -22,6 +22,7 @@ const navItems = [
   { href: "/admin", icon: LayoutDashboard, label: "대시보드" },
   { href: "/admin/projects", icon: FolderOpen, label: "프로젝트" },
   { href: "/admin/clubs", icon: Users, label: "동아리" },
+  { href: "/admin/users", icon: Users, label: "사용자" },
   { href: "/admin/cycles", icon: Calendar, label: "지원 사이클" },
   { href: "/admin/applications", icon: FileText, label: "지원서 관리" },
   { href: "/admin/settings", icon: Settings, label: "설정" },

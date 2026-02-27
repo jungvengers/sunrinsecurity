@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { FileText, ArrowRight, CheckCircle } from "lucide-react";
+import { formatCycleName } from "@/lib/utils";
 
 const statusLabels: Record<string, { label: string; color: string }> = {
   DRAFT: { label: "준비중", color: "bg-gray-500/20 text-gray-400" },
@@ -65,10 +66,7 @@ export default async function ApplicationsPage() {
                   </div>
                   <ArrowRight className="w-4 h-4 text-[hsl(var(--muted-foreground))] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <h2 className="font-semibold mb-1">{cycle.name}</h2>
-                <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                  {cycle.year}년
-                </p>
+                <h2 className="font-semibold mb-1">{formatCycleName(cycle.year, cycle.name)}</h2>
                 <p className="text-2xl font-bold mt-3">
                   {cycle.rounds[0]?._count.applications || 0}
                   <span className="text-sm font-normal text-[hsl(var(--muted-foreground))] ml-1">

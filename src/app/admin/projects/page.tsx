@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Plus, Pencil, Eye, EyeOff } from "lucide-react";
+import { Plus, Pencil, Eye, EyeOff, ExternalLink } from "lucide-react";
 import { deleteProject } from "@/actions/project";
 import { DeleteButton } from "@/components/delete-button";
 
@@ -83,6 +83,13 @@ export default async function ProjectsPage() {
                   </td>
                   <td className="p-4">
                     <div className="flex items-center justify-end gap-1">
+                      <Link
+                        href={project.isPublished ? `/project/${project.slug}` : `/admin/projects/${project.id}/preview`}
+                        className="p-2 rounded-lg hover:bg-[hsl(var(--secondary))] transition-colors"
+                        target="_blank"
+                      >
+                        <ExternalLink className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+                      </Link>
                       <Link
                         href={`/admin/projects/${project.id}`}
                         className="p-2 rounded-lg hover:bg-[hsl(var(--secondary))] transition-colors"

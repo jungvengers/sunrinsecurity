@@ -1,17 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { StorageImage } from "@/components/storage-image";
 
-export default async function ProjectDetailPage({
+export default async function AdminProjectPreviewPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ id: string }>;
 }) {
-  const { slug } = await params;
-
+  const { id } = await params;
   const project = await prisma.project.findUnique({
-    where: { slug, isPublished: true },
+    where: { id },
     include: { club: true },
   });
 
@@ -22,40 +20,17 @@ export default async function ProjectDetailPage({
   const content = project.content as object | null;
 
   return (
-    <section className="min-h-screen py-20 px-6">
+    <section className="min-h-screen py-12 px-6">
       <div className="max-w-4xl mx-auto">
         <Link
-          href="/project"
+          href={`/admin/projects/${project.id}`}
           className="inline-flex items-center gap-2 text-[hsl(var(--muted-foreground))] hover:text-white transition-colors mb-8"
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          프로젝트 목록
+          프로젝트 편집으로 돌아가기
         </Link>
 
         <article>
           <header className="mb-12">
-            {project.thumbnail && (
-              <div className="relative aspect-video rounded-2xl overflow-hidden mb-8">
-                <StorageImage
-                  src={project.thumbnail}
-                  alt={project.title}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            )}
             <h1 className="text-4xl font-bold mb-6">{project.title}</h1>
             <div className="flex flex-wrap gap-4 text-sm text-[hsl(var(--muted-foreground))]">
               {project.club && (
@@ -157,21 +132,6 @@ function renderNode(node: TiptapNode, key: string): React.ReactNode {
       return <hr key={key} />;
     case "hardBreak":
       return <br key={key} />;
-    case "image": {
-      const src = sanitizeImageSrc(node.attrs?.src);
-      if (!src) return null;
-      const alt = typeof node.attrs?.alt === "string" ? node.attrs.alt : "";
-      return (
-        <StorageImage
-          key={key}
-          src={src}
-          alt={alt}
-          width={1200}
-          height={800}
-          className="w-full h-auto"
-        />
-      );
-    }
     default:
       return children;
   }
@@ -203,24 +163,4 @@ function applyMarks(
         return acc;
     }
   }, text);
-}
-
-function sanitizeImageSrc(src: unknown): string | null {
-  if (typeof src !== "string" || src.length === 0) {
-    return null;
-  }
-
-  if (src.startsWith("/storage/")) {
-    return src;
-  }
-
-  try {
-    const url = new URL(src);
-    if (url.protocol === "http:" || url.protocol === "https:") {
-      return src;
-    }
-    return null;
-  } catch {
-    return null;
-  }
 }

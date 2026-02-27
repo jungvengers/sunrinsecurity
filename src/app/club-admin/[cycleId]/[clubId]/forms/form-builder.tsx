@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createOrUpdateForm, deleteForm } from "@/actions/form";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Plus,
   Trash2,
@@ -60,8 +61,10 @@ export function ClubFormBuilder({
     (existingForm?.questions as Question[]) || []
   );
   const [saving, setSaving] = useState(false);
+  const [hasSaved, setHasSaved] = useState(!!existingForm);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const [isPreview, setIsPreview] = useState(false);
+  const router = useRouter();
 
   const addQuestion = (type: string) => {
     if (isReadOnly) return;
@@ -142,6 +145,11 @@ export function ClubFormBuilder({
     setSaving(true);
     const result = await createOrUpdateForm(roundId, clubId, questions);
     setSaving(false);
+    if (result.success) {
+      setHasSaved(true);
+      router.refresh();
+      return;
+    }
     if (!result.success) {
       alert(result.error ?? "지원서 양식 저장에 실패했습니다.");
     }
@@ -153,6 +161,8 @@ export function ClubFormBuilder({
       const result = await deleteForm(existingForm.id);
       if (result?.success) {
         setQuestions([]);
+        setHasSaved(false);
+        router.refresh();
       } else {
         alert(result?.error ?? "지원서 양식 삭제에 실패했습니다.");
       }
@@ -248,7 +258,7 @@ export function ClubFormBuilder({
           <span className="text-sm text-[hsl(var(--muted-foreground))]">
             {questions.length}개 질문
           </span>
-          {existingForm && (
+          {hasSaved && (
             <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-400">
               저장됨
             </span>
@@ -259,7 +269,7 @@ export function ClubFormBuilder({
             <Eye className="w-4 h-4 mr-2" />
             미리보기
           </Button>
-          {!isReadOnly && existingForm && (
+          {!isReadOnly && hasSaved && existingForm && (
             <Button variant="destructive" size="sm" onClick={handleDelete}>
               <Trash2 className="w-4 h-4 mr-2" />
               전체 삭제

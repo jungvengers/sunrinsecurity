@@ -43,7 +43,7 @@ export default function NewCyclePage() {
             </label>
             <Input
               name="name"
-              defaultValue={`${currentYear}년 동아리 모집`}
+              defaultValue="동아리 모집"
               required
             />
           </div>

@@ -26,7 +26,7 @@ export default async function AdminDashboardPage() {
   const stats = [
     { label: "프로젝트", value: projectCount, icon: FolderOpen, href: "/admin/projects" },
     { label: "동아리", value: clubCount, icon: Users, href: "/admin/clubs" },
-    { label: "사용자", value: userCount, icon: UserCircle, href: "#" },
+    { label: "사용자", value: userCount, icon: UserCircle, href: "/admin/users" },
     { label: "지원서", value: applicationCount, icon: FileText, href: "/admin/applications" },
   ];
 

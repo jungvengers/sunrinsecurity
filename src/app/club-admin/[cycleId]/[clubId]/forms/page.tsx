@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import { ClubFormBuilder } from "./form-builder";
+import { formatCycleName } from "@/lib/utils";
 
 export default async function ClubAdminFormsPage({
   params,
@@ -81,7 +82,7 @@ export default async function ClubAdminFormsPage({
     <div>
       <div className="mb-6">
         <p className="text-sm text-[hsl(var(--muted-foreground))] mb-1">
-          {cycle.year}년 {cycle.name}
+          {formatCycleName(cycle.year, cycle.name)}
         </p>
         <h1 className="text-2xl font-bold">{club.name} 지원서 양식</h1>
       </div>

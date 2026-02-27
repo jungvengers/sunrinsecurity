@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { ApplicationManager } from "./application-manager";
+import { formatCycleName } from "@/lib/utils";
 
 export default async function CycleApplicationsPage({
   params,
@@ -60,13 +61,16 @@ export default async function CycleApplicationsPage({
     <div>
       <h1 className="text-3xl font-bold mb-2">{cycle.name} 지원서</h1>
       <p className="text-[hsl(var(--muted-foreground))] mb-8">
-        {cycle.year}년 | 총 {applications.length}건
+        {formatCycleName(cycle.year, cycle.name)} | 총 {applications.length}건
       </p>
       <ApplicationManager
         cycleId={cycleId}
         clubs={clubsWithMaxMembers}
         applications={applications}
         cycleStatus={cycle.status}
+        canChangeStatus={
+          !!cycle.applyEndDate && new Date() >= new Date(cycle.applyEndDate)
+        }
       />
     </div>
   );

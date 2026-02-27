@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { formatCycleName } from "@/lib/utils";
 import { FileText, Users, ArrowRight } from "lucide-react";
 
 export default async function ClubAdminDashboard() {
@@ -72,7 +73,7 @@ export default async function ClubAdminDashboard() {
                   <div>
                     <h2 className="text-xl font-semibold">{assignment.club.name}</h2>
                     <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                      {assignment.cycle.year}년 {assignment.cycle.name}
+                      {formatCycleName(assignment.cycle.year, assignment.cycle.name)}
                     </p>
                   </div>
                   <span className={`px-2 py-1 rounded text-xs font-medium ${status.color}`}>

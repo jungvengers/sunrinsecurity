@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -237,6 +238,14 @@ export async function addClubAdmin(cycleId: string, formData: FormData) {
     },
   });
 
+  await writeAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "club-admin.add",
+    targetType: "ClubAdmin",
+    metadata: { cycleId, clubId, userId: user.id, userEmail },
+  });
+
   revalidatePath(`/admin/cycles/${cycleId}`);
   return { success: true };
 }
@@ -252,6 +261,15 @@ export async function removeClubAdmin(
 
   await prisma.clubAdmin.delete({
     where: { id },
+  });
+
+  await writeAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "club-admin.remove",
+    targetType: "ClubAdmin",
+    targetId: id,
+    metadata: { cycleId },
   });
 
   revalidatePath(`/admin/cycles/${cycleId}`);
@@ -323,5 +341,14 @@ export async function completeCycle(cycleId: string) {
 
   revalidatePath(`/admin/cycles/${cycleId}`);
   revalidatePath("/admin/cycles");
+
+  await writeAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "cycle.complete",
+    targetType: "RecruitmentCycle",
+    targetId: cycleId,
+  });
+
   return { success: true };
 }

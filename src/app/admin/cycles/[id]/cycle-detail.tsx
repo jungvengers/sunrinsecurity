@@ -87,24 +87,6 @@ interface Cycle {
   clubAdmins: ClubAdmin[];
 }
 
-const statusLabels: Record<string, string> = {
-  DRAFT: "준비중",
-  OPEN: "모집중",
-  CLOSED: "마감",
-  REVIEWING: "심사중",
-  ALLOCATING: "배정중",
-  COMPLETED: "완료",
-};
-
-const statusColors: Record<string, string> = {
-  DRAFT: "bg-gray-500/20 text-gray-400",
-  OPEN: "bg-green-500/20 text-green-400",
-  CLOSED: "bg-yellow-500/20 text-yellow-400",
-  REVIEWING: "bg-blue-500/20 text-blue-400",
-  ALLOCATING: "bg-purple-500/20 text-purple-400",
-  COMPLETED: "bg-white/20 text-white",
-};
-
 export function CycleDetail({ cycle, clubs }: { cycle: Cycle; clubs: Club[] }) {
   const [showAddAdmin, setShowAddAdmin] = useState(false);
   const [adminEmail, setAdminEmail] = useState("");

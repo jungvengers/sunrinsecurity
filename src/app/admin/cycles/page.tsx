@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Plus, Calendar, Users } from "lucide-react";
 import { deleteCycle } from "@/actions/cycle";
 import { DeleteButton } from "@/components/delete-button";
+import { formatCycleName } from "@/lib/utils";
 
 const statusLabels: Record<string, string> = {
   DRAFT: "준비중",
@@ -61,7 +62,7 @@ export default async function CyclesPage() {
                 <Link href={`/admin/cycles/${cycle.id}`} className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h2 className="text-lg font-semibold hover:underline">
-                      {cycle.name}
+                      {formatCycleName(cycle.year, cycle.name)}
                     </h2>
                     <span className="px-2 py-0.5 rounded text-xs font-medium bg-[hsl(var(--secondary))]">
                       {statusLabels[cycle.status] || cycle.status}
@@ -70,7 +71,7 @@ export default async function CyclesPage() {
                   <div className="flex items-center gap-4 text-sm text-[hsl(var(--muted-foreground))]">
                     <span className="flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5" />
-                      {cycle.year}년
+                      {cycle.year}학년도
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5" />

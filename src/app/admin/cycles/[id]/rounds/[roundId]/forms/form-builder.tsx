@@ -22,6 +22,7 @@ import {
   Copy,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface Question {
   id: string;
@@ -96,10 +97,15 @@ export function FormBuilder({
     (initialForm?.questions as Question[]) || []
   );
   const [saving, setSaving] = useState(false);
+  const [savedClubIds, setSavedClubIds] = useState<string[]>(
+    existingForms.map((form) => form.clubId)
+  );
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const [isPreview, setIsPreview] = useState(false);
+  const router = useRouter();
 
   const existingForm = existingForms.find((f) => f.clubId === selectedClubId);
+  const hasSaved = savedClubIds.includes(selectedClubId);
 
   const loadForm = (clubId: string) => {
     setSelectedClubId(clubId);
@@ -195,8 +201,16 @@ export function FormBuilder({
 
   const handleSave = async () => {
     setSaving(true);
-    await createOrUpdateForm(roundId, selectedClubId, questions);
+    const result = await createOrUpdateForm(roundId, selectedClubId, questions);
     setSaving(false);
+    if (!result.success) {
+      alert(result.error ?? "지원서 양식 저장에 실패했습니다.");
+      return;
+    }
+    setSavedClubIds((prev) =>
+      prev.includes(selectedClubId) ? prev : [...prev, selectedClubId]
+    );
+    router.refresh();
   };
 
   const handleDelete = async () => {
@@ -206,6 +220,8 @@ export function FormBuilder({
     ) {
       await deleteForm(existingForm.id);
       setQuestions([]);
+      setSavedClubIds((prev) => prev.filter((clubId) => clubId !== selectedClubId));
+      router.refresh();
     }
   };
 
@@ -310,7 +326,7 @@ export function FormBuilder({
     <div className="space-y-6">
       <div className="flex items-center gap-3 flex-wrap">
         {clubs.map((club) => {
-          const hasForm = existingForms.some((f) => f.clubId === club.id);
+          const hasForm = savedClubIds.includes(club.id);
           return (
             <button
               key={club.id}
@@ -339,7 +355,7 @@ export function FormBuilder({
           <span className="text-sm text-[hsl(var(--muted-foreground))]">
             {questions.length}개 질문
           </span>
-          {existingForm && (
+          {hasSaved && (
             <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-400">
               저장됨
             </span>
@@ -354,7 +370,7 @@ export function FormBuilder({
             <Eye className="w-4 h-4 mr-2" />
             미리보기
           </Button>
-          {existingForm && (
+          {hasSaved && existingForm && (
             <Button variant="destructive" size="sm" onClick={handleDelete}>
               <Trash2 className="w-4 h-4 mr-2" />
               전체 삭제

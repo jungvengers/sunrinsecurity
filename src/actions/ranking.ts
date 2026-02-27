@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
@@ -16,7 +17,7 @@ export async function updateApplicationRank(
 
   const application = await prisma.application.findUnique({
     where: { id: applicationId },
-    include: { round: true },
+    include: { round: { include: { cycle: true } } },
   });
 
   if (!application) {
@@ -60,7 +61,24 @@ export async function updateApplicationRank(
     });
   }
 
+  await writeAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "application.rank.update",
+    targetType: "Application",
+    targetId: applicationId,
+    metadata: {
+      rank,
+      note,
+      clubId: application.clubId,
+      cycleId: application.round.cycleId,
+    },
+  });
+
   revalidatePath(`/admin/applications/${application.round.cycleId}`);
+  revalidatePath(
+    `/club-admin/${application.round.cycleId}/${application.clubId}/applications`
+  );
   return { success: true };
 }
 
@@ -75,7 +93,7 @@ export async function updateApplicationStatus(
 
   const application = await prisma.application.findUnique({
     where: { id: applicationId },
-    include: { round: true },
+    include: { round: { include: { cycle: true } } },
   });
 
   if (!application) {
@@ -94,12 +112,38 @@ export async function updateApplicationStatus(
     return { success: false, error: "권한이 없습니다." };
   }
 
+  if (
+    !application.round.cycle.applyEndDate ||
+    new Date() < application.round.cycle.applyEndDate
+  ) {
+    return {
+      success: false,
+      error: "지원 마감 이후에만 합격/불합격 상태를 변경할 수 있습니다.",
+    };
+  }
+
   await prisma.application.update({
     where: { id: applicationId },
     data: { status },
   });
 
+  await writeAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "application.status.update",
+    targetType: "Application",
+    targetId: applicationId,
+    metadata: {
+      status,
+      clubId: application.clubId,
+      cycleId: application.round.cycleId,
+    },
+  });
+
   revalidatePath(`/admin/applications/${application.round.cycleId}`);
+  revalidatePath(
+    `/club-admin/${application.round.cycleId}/${application.clubId}/applications`
+  );
   return { success: true };
 }
 
@@ -172,7 +216,7 @@ export async function allocateMembers(cycleId: string) {
     clubApplications.set(app.clubId, list);
   }
 
-  for (const [clubId, apps] of clubApplications) {
+  for (const [, apps] of clubApplications) {
     apps.sort((a, b) => {
       const rankA = a.applicantRank?.rank ?? 9999;
       const rankB = b.applicantRank?.rank ?? 9999;
@@ -241,5 +285,19 @@ export async function allocateMembers(cycleId: string) {
   });
 
   revalidatePath(`/admin/applications/${cycleId}`);
+
+  await writeAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "application.allocate",
+    targetType: "RecruitmentCycle",
+    targetId: cycleId,
+    metadata: {
+      allocated: allocations.length,
+      allocatedIds,
+      rejectedIds,
+    },
+  });
+
   return { success: true, allocated: allocations.length };
 }

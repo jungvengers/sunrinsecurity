@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { FormBuilder } from "./form-builder";
+import { formatCycleName } from "@/lib/utils";
 
 export default async function FormsPage({
   params,
@@ -32,7 +33,7 @@ export default async function FormsPage({
     <div>
       <h1 className="text-3xl font-bold mb-2">{round.name} 지원서 양식</h1>
       <p className="text-[hsl(var(--muted-foreground))] mb-8">
-        {round.cycle.name} ({round.cycle.year}년)
+        {formatCycleName(round.cycle.year, round.cycle.name)}
       </p>
       <FormBuilder
         cycleId={id}

@@ -2,13 +2,14 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ApplyForm } from "./apply-form";
+import { PreviewForms } from "./preview-forms";
+import { ApplicationHistory } from "./application-history";
+import { formatCycleName } from "@/lib/utils";
 import {
   Calendar,
   Clock,
   CheckCircle2,
   XCircle,
-  Loader2,
-  Users,
   FileText,
   LogIn,
   AlertCircle,
@@ -73,12 +74,11 @@ export default async function ApplyPage() {
   // 현재 시간 기준으로 활성 사이클 찾기
   const now = new Date();
 
-  // 공개일이 지났거나 OPEN 상태인 사이클 찾기
   const activeCycle = await prisma.recruitmentCycle.findFirst({
     where: {
       OR: [
-        { viewStartDate: { lte: now }, status: { in: ["DRAFT", "OPEN"] } },
-        { status: "OPEN" },
+        { viewStartDate: { lte: now } },
+        { status: { in: ["OPEN", "CLOSED", "REVIEWING", "ALLOCATING", "COMPLETED"] } },
       ],
     },
     include: {
@@ -138,12 +138,16 @@ export default async function ApplyPage() {
     applyStartDate &&
     now >= viewStartDate &&
     now < applyStartDate;
-  const isOpen =
+  const isOpenByDate =
     applyStartDate &&
     applyEndDate &&
     now >= applyStartDate &&
     now <= applyEndDate;
-  const isClosed = applyEndDate && now > applyEndDate;
+  const isClosedByDate = !!(applyEndDate && now > applyEndDate);
+  const isClosedByStatus = ["CLOSED", "REVIEWING", "ALLOCATING", "COMPLETED"].includes(
+    activeCycle.status
+  );
+  const isClosed = isClosedByDate || isClosedByStatus;
 
   // 공개 전
   if (isBeforeView) {
@@ -178,73 +182,20 @@ export default async function ApplyPage() {
     );
   }
 
-  // 마감됨
-  if (isClosed) {
-    return (
-      <>
-        <section className="relative pt-32 pb-20 px-6 -mt-16 overflow-hidden min-h-screen flex items-center">
-          <div className="absolute inset-0 z-0">
-            <div className="absolute inset-0 bg-gradient-to-b from-[hsl(var(--secondary))] via-[hsl(var(--background))] to-[hsl(var(--background))]" />
-          </div>
-          <div className="max-w-md mx-auto text-center relative z-10">
-            <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-10">
-              <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-6">
-                <XCircle className="w-8 h-8 text-red-400" />
-              </div>
-              <h1 className="text-2xl font-bold mb-3">모집이 마감되었습니다</h1>
-              <p className="text-[hsl(var(--muted-foreground))] mb-8">
-                {activeCycle.name}의 지원 기간이 종료되었습니다.
-              </p>
-              <Link
-                href="/club"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[hsl(var(--secondary))] rounded-xl font-medium hover:bg-[hsl(var(--muted))] transition-colors"
-              >
-                동아리 둘러보기
-              </Link>
-            </div>
-          </div>
-        </section>
-      </>
-    );
-  }
-
   // 미리보기 또는 지원 가능
-  const canApply = isOpen;
+  const canApply = !!isOpenByDate && !isClosedByStatus;
 
   const existingApplications = await prisma.application.findMany({
     where: {
       userId: session.user.id,
       roundId: activeRound.id,
     },
-    include: { club: true },
+    include: { club: true, form: true },
     orderBy: { priority: "asc" },
   });
 
   // 미리보기 상태일 때
   const cycle = activeCycle;
-
-  const statusConfig = {
-    PENDING: {
-      icon: Loader2,
-      label: "심사 중",
-      className: "text-yellow-400 bg-yellow-400/10",
-    },
-    ACCEPTED: {
-      icon: CheckCircle2,
-      label: "합격",
-      className: "text-green-400 bg-green-400/10",
-    },
-    REJECTED: {
-      icon: XCircle,
-      label: "불합격",
-      className: "text-red-400 bg-red-400/10",
-    },
-    ALLOCATED: {
-      icon: Users,
-      label: "배정됨",
-      className: "text-blue-400 bg-blue-400/10",
-    },
-  };
 
   return (
     <>
@@ -269,7 +220,7 @@ export default async function ApplyPage() {
           <div className="flex flex-wrap items-center gap-4 text-[hsl(var(--muted-foreground))]">
             <span className="inline-flex items-center gap-2 px-4 py-2 bg-[hsl(var(--card))] rounded-xl border border-[hsl(var(--border))]">
               <Calendar className="w-4 h-4" />
-              {cycle.year}년 {cycle.name}
+              {formatCycleName(cycle.year, cycle.name)}
             </span>
             {cycle.applyEndDate && (
               <span className="inline-flex items-center gap-2 px-4 py-2 bg-[hsl(var(--card))] rounded-xl border border-[hsl(var(--border))]">
@@ -284,6 +235,20 @@ export default async function ApplyPage() {
       {/* Application Status */}
       <section className="px-6 pb-20">
         <div className="max-w-3xl mx-auto space-y-6">
+          {isClosed && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6">
+              <div className="flex items-center gap-3">
+                <XCircle className="w-5 h-5 text-red-400" />
+                <div>
+                  <h3 className="font-semibold text-red-300">모집이 마감되었습니다</h3>
+                  <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                    지원 내역은 아래에서 계속 확인할 수 있습니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {existingApplications.length > 0 && (
             <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl overflow-hidden">
               <div className="p-6 border-b border-[hsl(var(--border))] bg-[hsl(var(--secondary))]/50">
@@ -293,34 +258,11 @@ export default async function ApplyPage() {
                   완료
                 </p>
               </div>
-              <div className="p-4 space-y-2">
-                {existingApplications.map((app) => {
-                  const status = statusConfig[app.status];
-                  const StatusIcon = status.icon;
-                  return (
-                    <div
-                      key={app.id}
-                      className="flex items-center justify-between bg-[hsl(var(--secondary))] rounded-xl p-4"
-                    >
-                      <div className="flex items-center gap-4">
-                        <span className="w-8 h-8 rounded-lg bg-[hsl(var(--muted))] flex items-center justify-center text-sm font-bold">
-                          {app.priority}
-                        </span>
-                        <span className="font-medium">{app.club.name}</span>
-                      </div>
-                      <span
-                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium ${status.className}`}
-                      >
-                        <StatusIcon
-                          className={`w-4 h-4 ${
-                            app.status === "PENDING" ? "animate-spin" : ""
-                          }`}
-                        />
-                        {status.label}
-                      </span>
-                    </div>
-                  );
-                })}
+              <div className="p-4">
+                <ApplicationHistory
+                  applications={existingApplications}
+                  canCancel={canApply}
+                />
               </div>
             </div>
           )}
@@ -345,104 +287,22 @@ export default async function ApplyPage() {
                 </div>
               </div>
 
-              {activeRound.applicationForms.map((form) => (
-                <div
-                  key={form.id}
-                  className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl overflow-hidden"
-                >
-                  <div className="p-6 border-b border-[hsl(var(--border))] bg-[hsl(var(--secondary))]/50">
-                    <h2 className="font-semibold text-lg">
-                      {form.club.name} 지원서
-                    </h2>
-                  </div>
-                  <div className="p-6 space-y-6">
-                    {(
-                      form.questions as unknown as Array<{
-                        id: string;
-                        type: string;
-                        label: string;
-                        required: boolean;
-                        options?: string[];
-                        placeholder?: string;
-                      }>
-                    ).map((question) => (
-                      <div key={question.id} className="space-y-2">
-                        <label className="block text-sm font-medium">
-                          {question.label}
-                          {question.required && (
-                            <span className="text-[hsl(var(--destructive))] ml-1">
-                              *
-                            </span>
-                          )}
-                        </label>
-                        {question.type === "TEXT" && (
-                          <input
-                            type="text"
-                            disabled
-                            placeholder={question.placeholder || ""}
-                            className="w-full h-10 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))] px-3 text-sm opacity-60"
-                          />
-                        )}
-                        {question.type === "TEXTAREA" && (
-                          <textarea
-                            disabled
-                            placeholder={question.placeholder || ""}
-                            rows={4}
-                            className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))] px-3 py-2 text-sm opacity-60"
-                          />
-                        )}
-                        {question.type === "SELECT" && (
-                          <select
-                            disabled
-                            className="w-full h-10 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))] px-3 text-sm opacity-60"
-                          >
-                            <option>선택하세요</option>
-                            {question.options?.map((opt) => (
-                              <option key={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        )}
-                        {question.type === "RADIO" && (
-                          <div className="space-y-2 opacity-60">
-                            {question.options?.map((opt) => (
-                              <label
-                                key={opt}
-                                className="flex items-center gap-2"
-                              >
-                                <input
-                                  type="radio"
-                                  disabled
-                                  className="w-4 h-4"
-                                />
-                                <span className="text-sm">{opt}</span>
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                        {question.type === "CHECKBOX" && (
-                          <div className="space-y-2 opacity-60">
-                            {question.options?.map((opt) => (
-                              <label
-                                key={opt}
-                                className="flex items-center gap-2"
-                              >
-                                <input
-                                  type="checkbox"
-                                  disabled
-                                  className="w-4 h-4"
-                                />
-                                <span className="text-sm">{opt}</span>
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+              <PreviewForms
+                forms={activeRound.applicationForms.map((form) => ({
+                  id: form.id,
+                  club: { id: form.club.id, name: form.club.name },
+                  questions: form.questions as unknown as Array<{
+                    id: string;
+                    type: string;
+                    label: string;
+                    required: boolean;
+                    options?: string[];
+                    placeholder?: string;
+                  }>,
+                }))}
+              />
             </div>
-          ) : existingApplications.length < cycle.maxApplications ? (
+          ) : canApply && existingApplications.length < cycle.maxApplications ? (
             <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl overflow-hidden">
               <div className="p-6 border-b border-[hsl(var(--border))] bg-[hsl(var(--secondary))]/50">
                 <h2 className="font-semibold text-lg">새 지원서 작성</h2>

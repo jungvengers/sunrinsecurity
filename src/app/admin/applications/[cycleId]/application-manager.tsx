@@ -8,7 +8,7 @@ import {
   allocateMembers,
 } from "@/actions/ranking";
 import { useState } from "react";
-import { Check, X, Play } from "lucide-react";
+import { Check, X, Play, ChevronDown, ChevronUp } from "lucide-react";
 
 interface User {
   id: string;
@@ -76,11 +76,13 @@ export function ApplicationManager({
   clubs,
   applications,
   cycleStatus,
+  canChangeStatus,
 }: {
   cycleId: string;
   clubs: ClubWithMembers[];
   applications: Application[];
   cycleStatus: string;
+  canChangeStatus: boolean;
 }) {
   const [selectedClubId, setSelectedClubId] = useState<string>(
     clubs[0]?.id || ""
@@ -121,6 +123,14 @@ export function ApplicationManager({
         <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
           <p className="text-green-400 font-medium">
             완료된 사이클입니다. 지원서를 수정할 수 없습니다.
+          </p>
+        </div>
+      )}
+
+      {!canChangeStatus && !isReadOnly && (
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
+          <p className="text-yellow-300 font-medium">
+            지원 마감 이후에만 합격/불합격 상태를 변경할 수 있습니다.
           </p>
         </div>
       )}
@@ -191,6 +201,7 @@ export function ApplicationManager({
                   key={app.id}
                   application={app}
                   isReadOnly={isReadOnly || hasAllocated}
+                  canChangeStatus={canChangeStatus}
                 />
               ))}
             </tbody>
@@ -204,14 +215,17 @@ export function ApplicationManager({
 function ApplicationRow({
   application,
   isReadOnly,
+  canChangeStatus,
 }: {
   application: Application;
   isReadOnly: boolean;
+  canChangeStatus: boolean;
 }) {
   const [rank, setRank] = useState<string>(
     application.applicantRank?.rank?.toString() || ""
   );
   const [saving, setSaving] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const handleRankChange = async () => {
     if (isReadOnly) return;
@@ -225,71 +239,141 @@ function ApplicationRow({
   };
 
   const handleStatus = async (status: "ACCEPTED" | "REJECTED") => {
-    if (isReadOnly) return;
+    if (isReadOnly || !canChangeStatus) return;
     await updateApplicationStatus(application.id, status);
   };
 
+  const answers = (application.answers || {}) as Record<string, unknown>;
+  const questions =
+    (application.form?.questions as Array<{ id: string; label: string }>) || [];
+
+  const renderAnswer = (questionId: string) => {
+    const value = answers[questionId] ?? answers[`answer_${questionId}`];
+    if (Array.isArray(value)) {
+      return value.join(", ");
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    return "-";
+  };
+
+  const fallbackAnswers = Object.entries(answers)
+    .filter(([key]) => key.startsWith("answer_"))
+    .filter(([key]) => !questions.some((question) => `answer_${question.id}` === key));
+
   return (
-    <tr className="border-b border-[hsl(var(--border))] last:border-0">
-      <td className="p-4">
-        <div>
-          <p className="font-medium">{application.user.name}</p>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            {application.user.grade}학년 {application.user.classNum}반
-          </p>
-        </div>
-      </td>
-      <td className="p-4">{application.priority}지망</td>
-      <td className="p-4">
-        <div className="flex items-center gap-2">
-          <Input
-            type="number"
-            value={rank}
-            onChange={(e) => setRank(e.target.value)}
-            onBlur={handleRankChange}
-            className="w-20"
-            placeholder="-"
-            disabled={saving || isReadOnly}
-          />
-        </div>
-      </td>
-      <td className="p-4">
-        <span
-          className={`px-2 py-1 rounded text-sm ${
-            statusColors[application.status]
-          }`}
-        >
-          {statusLabels[application.status]}
-        </span>
-      </td>
-      <td className="p-4">
-        {isReadOnly ? (
-          <span className="text-sm text-[hsl(var(--muted-foreground))]">-</span>
-        ) : (
+    <>
+      <tr className="border-b border-[hsl(var(--border))]">
+        <td className="p-4">
+          <div>
+            <p className="font-medium">{application.user.name}</p>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              {application.user.grade}학년 {application.user.classNum}반
+            </p>
+          </div>
+        </td>
+        <td className="p-4">{application.priority}지망</td>
+        <td className="p-4">
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              value={rank}
+              onChange={(e) => setRank(e.target.value)}
+              onBlur={handleRankChange}
+              className="w-20"
+              placeholder="-"
+              disabled={saving || isReadOnly}
+            />
+          </div>
+        </td>
+        <td className="p-4">
+          <span
+            className={`px-2 py-1 rounded text-sm ${
+              statusColors[application.status]
+            }`}
+          >
+            {statusLabels[application.status]}
+          </span>
+        </td>
+        <td className="p-4">
           <div className="flex items-center justify-end gap-2">
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handleStatus("ACCEPTED")}
-              className={
-                application.status === "ACCEPTED" ? "bg-green-500/20" : ""
-              }
+              onClick={() => setExpanded(!expanded)}
             >
-              <Check className="w-4 h-4" />
+              {expanded ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleStatus("REJECTED")}
-              className={
-                application.status === "REJECTED" ? "bg-red-500/20" : ""
-              }
-            >
-              <X className="w-4 h-4" />
-            </Button>
+            {!isReadOnly && (
+              <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleStatus("ACCEPTED")}
+                disabled={!canChangeStatus}
+                className={
+                  application.status === "ACCEPTED" ? "bg-green-500/20" : ""
+                }
+              >
+                <Check className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleStatus("REJECTED")}
+                disabled={!canChangeStatus}
+                className={
+                  application.status === "REJECTED" ? "bg-red-500/20" : ""
+                }
+              >
+                <X className="w-4 h-4" />
+              </Button>
+              </>
+            )}
           </div>
-        )}
-      </td>
-    </tr>
+        </td>
+      </tr>
+      {expanded && (
+        <tr className="bg-[hsl(var(--secondary))] border-b border-[hsl(var(--border))]">
+          <td colSpan={5} className="p-6">
+            <div className="space-y-4">
+              <h4 className="font-medium">지원서 내용</h4>
+              {questions.map((q) => (
+                <div key={q.id}>
+                  <p className="text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                    {q.label}
+                  </p>
+                  <p className="bg-[hsl(var(--background))] rounded-lg p-3">
+                    {renderAnswer(q.id)}
+                  </p>
+                </div>
+              ))}
+              {fallbackAnswers.length > 0 && (
+                <div className="space-y-3 pt-2 border-t border-[hsl(var(--border))]">
+                  <p className="text-sm text-[hsl(var(--muted-foreground))]">기타 답변</p>
+                  {fallbackAnswers.map(([key, value]) => (
+                    <div key={key}>
+                      <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">{key}</p>
+                      <p className="bg-[hsl(var(--background))] rounded-lg p-3">
+                        {Array.isArray(value)
+                          ? value.join(", ")
+                          : typeof value === "string"
+                            ? value
+                            : "-"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }

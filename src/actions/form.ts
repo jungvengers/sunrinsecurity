@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { writeAuditLog } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 
 export async function createOrUpdateForm(
@@ -51,14 +52,32 @@ export async function createOrUpdateForm(
       where: { id: existing.id },
       data: { questions },
     });
+
+    await writeAuditLog({
+      actorId: session.user.id,
+      actorRole: session.user.role,
+      action: "application-form.update",
+      targetType: "ApplicationForm",
+      targetId: existing.id,
+      metadata: { roundId, clubId },
+    });
   } else {
-    await prisma.applicationForm.create({
+    const created = await prisma.applicationForm.create({
       data: {
         roundId,
         clubId,
         questions,
         isActive: true,
       },
+    });
+
+    await writeAuditLog({
+      actorId: session.user.id,
+      actorRole: session.user.role,
+      action: "application-form.create",
+      targetType: "ApplicationForm",
+      targetId: created.id,
+      metadata: { roundId, clubId },
     });
   }
 
@@ -99,6 +118,15 @@ export async function deleteForm(id: string) {
 
   await prisma.applicationForm.delete({
     where: { id },
+  });
+
+  await writeAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "application-form.delete",
+    targetType: "ApplicationForm",
+    targetId: id,
+    metadata: { roundId: form.roundId, clubId: form.clubId },
   });
 
   revalidatePath(

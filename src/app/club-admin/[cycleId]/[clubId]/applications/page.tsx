@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import { ClubApplicationManager } from "./application-manager";
+import { formatCycleName } from "@/lib/utils";
 
 export default async function ClubAdminApplicationsPage({
   params,
@@ -54,12 +55,14 @@ export default async function ClubAdminApplicationsPage({
 
   const isReadOnly = cycle.status === "COMPLETED";
   const hasAllocated = applications.some((app) => app.status === "ALLOCATED");
+  const canChangeStatus =
+    !!cycle.applyEndDate && new Date() >= new Date(cycle.applyEndDate);
 
   return (
     <div>
       <div className="mb-6">
         <p className="text-sm text-[hsl(var(--muted-foreground))] mb-1">
-          {cycle.year}년 {cycle.name}
+          {formatCycleName(cycle.year, cycle.name)}
         </p>
         <h1 className="text-2xl font-bold">{club.name} 지원서 관리</h1>
         <p className="text-[hsl(var(--muted-foreground))] mt-1">
@@ -86,6 +89,7 @@ export default async function ClubAdminApplicationsPage({
       <ClubApplicationManager
         applications={applications}
         isReadOnly={isReadOnly || hasAllocated}
+        canChangeStatus={canChangeStatus}
       />
     </div>
   );

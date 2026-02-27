@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { CycleDetail } from "./cycle-detail";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { formatCycleName } from "@/lib/utils";
 
 export default async function CycleDetailPage({
   params,
@@ -56,10 +57,7 @@ export default async function CycleDetailPage({
           사이클 목록
         </Link>
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold">{cycle.name}</h1>
-          <span className="px-2 py-0.5 rounded text-xs font-medium bg-[hsl(var(--secondary))]">
-            {cycle.year}년
-          </span>
+          <h1 className="text-2xl font-bold">{formatCycleName(cycle.year, cycle.name)}</h1>
         </div>
       </div>
       <CycleDetail cycle={cycle} clubs={clubs} />
