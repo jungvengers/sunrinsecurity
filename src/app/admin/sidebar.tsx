@@ -7,6 +7,7 @@ import {
   FolderOpen,
   Users,
   FileText,
+  ScrollText,
   Settings,
   Calendar,
   ArrowLeft,
@@ -25,6 +26,7 @@ const navItems = [
   { href: "/admin/users", icon: Users, label: "사용자" },
   { href: "/admin/cycles", icon: Calendar, label: "지원 사이클" },
   { href: "/admin/applications", icon: FileText, label: "지원서 관리" },
+  { href: "/admin/logs", icon: ScrollText, label: "로그" },
   { href: "/admin/settings", icon: Settings, label: "설정" },
 ];
 
