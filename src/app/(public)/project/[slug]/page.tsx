@@ -11,7 +11,10 @@ export default async function ProjectDetailPage({
   const { slug } = await params;
 
   const project = await prisma.project.findFirst({
-    where: { slug, isPublished: true },
+    where: {
+      isPublished: true,
+      OR: [{ slug }, { id: slug }],
+    },
     include: { club: true },
   });
 

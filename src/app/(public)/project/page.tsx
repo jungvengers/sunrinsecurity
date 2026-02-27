@@ -68,7 +68,7 @@ export default async function ProjectPage({
                 {projects.map((project, index) => (
                   <Link
                     key={project.id}
-                    href={`/project/${project.slug}`}
+                    href={`/project/${project.slug || project.id}`}
                     className="group bg-[hsl(var(--card))] rounded-2xl border border-[hsl(var(--border))] overflow-hidden hover:border-[hsl(var(--muted-foreground))] hover:shadow-xl hover:shadow-black/20 transition-all duration-300 hover:-translate-y-1"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >

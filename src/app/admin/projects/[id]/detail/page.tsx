@@ -31,7 +31,7 @@ export default async function AdminProjectDetailPage({
           </Link>
           {project.isPublished && (
             <Link
-              href={`/project/${project.slug}`}
+              href={`/project/${project.slug || project.id}`}
               target="_blank"
               className="text-sm text-[hsl(var(--muted-foreground))] hover:text-white transition-colors"
             >
