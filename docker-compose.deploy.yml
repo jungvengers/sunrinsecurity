@@ -87,7 +87,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET: ${MINIO_BUCKET:-sunrinsecurity}
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost}
-      RUN_DB_MIGRATIONS: ${RUN_DB_MIGRATIONS:-false}
+      RUN_DB_MIGRATIONS: ${RUN_DB_MIGRATIONS:-true}
     depends_on:
       postgres:
         condition: service_healthy
