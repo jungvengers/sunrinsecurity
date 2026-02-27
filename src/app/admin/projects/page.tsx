@@ -84,9 +84,8 @@ export default async function ProjectsPage() {
                   <td className="p-4">
                     <div className="flex items-center justify-end gap-1">
                       <Link
-                        href={project.isPublished ? `/project/${project.slug}` : `/admin/projects/${project.id}/preview`}
+                        href={`/admin/projects/${project.id}/detail`}
                         className="p-2 rounded-lg hover:bg-[hsl(var(--secondary))] transition-colors"
-                        target="_blank"
                       >
                         <ExternalLink className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
                       </Link>
