@@ -302,7 +302,7 @@ export async function updateRoundClubConfig(
     }));
 
   if (activeConfigs.some((config) => config.maxMembers < 1)) {
-    return { success: false, error: "최대 인원은 1명 이상이어야 합니다." };
+    return { success: false, error: "모집 인원은 1명 이상이어야 합니다." };
   }
 
   await prisma.$transaction(async (tx) => {

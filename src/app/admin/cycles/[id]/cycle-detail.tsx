@@ -600,7 +600,7 @@ function RoundCard({
 
       {isEditing && (
         <div className="mt-4 pt-4 border-t border-[hsl(var(--border))]">
-          <h4 className="text-sm font-medium mb-3">참여 동아리 및 최대 인원</h4>
+          <h4 className="text-sm font-medium mb-3">참여 동아리 및 모집 인원</h4>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {clubs.map((club) => {
               const config = clubConfigs.find((c) => c.clubId === club.id);
@@ -633,7 +633,7 @@ function RoundCard({
                   {config?.isActive && (
                     <div>
                       <label className="block text-xs text-[hsl(var(--muted-foreground))] mb-1">
-                        최대 인원
+                        모집 인원
                       </label>
                       <Input
                         type="number"

@@ -64,6 +64,41 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="py-24 px-6 bg-[hsl(var(--card))] border-y border-[hsl(var(--border))]">
+        <div className="max-w-3xl mx-auto text-center">
+          <p className="text-sm text-[hsl(var(--muted-foreground))] mb-3 uppercase tracking-wider">
+            About us
+          </p>
+          <h2 className="text-3xl font-bold mb-8">우리 학과를 소개합니다</h2>
+          <div className="text-[hsl(var(--muted-foreground))] leading-relaxed space-y-4 text-center">
+            <p>
+              선린인터넷고등학교 <strong className="text-foreground">정보보호과</strong>는
+              사이버 보안 분야의 인재를 양성하는 특성화 학과입니다. 디지털 시대에
+              필수적인 정보 보호, 네트워크 보안, 시스템 해킹·방어, 웹 보안 등
+              이론과 실습을 겸비한 교육으로 학생들이 보안 전문가로 성장할 수 있도록
+              지원합니다.
+            </p>
+            <p>
+              다양한 전문 동아리와 프로젝트를 통해 실전에 가까운 경험을 쌓고,
+              국내외 해킹/개발 대회에 참가하며 실력을 검증합니다. 선린
+              정보보호과는 함께 배우고 경쟁하며 성장하는 환경에서, 다음 세대를
+              이끌 보안 인재를 만들어 갑니다.
+            </p>
+          </div>
+          <div className="mt-10">
+            <Link
+              href="https://www.youtube.com/watch?v=rVE4golALoE"
+              className="btn-primary inline-flex items-center gap-2"
+            >
+              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path d="M8 5v14l11-7L8 5z" />
+              </svg>
+              소개 영상 보기
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <section className="py-24 px-6">
         <div className="max-w-5xl mx-auto">
           <p className="text-sm text-[hsl(var(--muted-foreground))] mb-3 uppercase tracking-wider">
