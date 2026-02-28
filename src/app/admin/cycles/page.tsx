@@ -75,7 +75,7 @@ export default async function CyclesPage() {
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5" />
-                      관리자 {cycle._count.clubAdmins}명
+                      동아리 관리자 {cycle._count.clubAdmins}명
                     </span>
                     <span>최대 지원 {cycle.maxApplications}개</span>
                     <span>

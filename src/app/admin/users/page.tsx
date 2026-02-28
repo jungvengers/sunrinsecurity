@@ -40,7 +40,7 @@ export default async function AdminUsersPage() {
                 역할
               </th>
               <th className="text-left p-4 text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
-                지원서
+                지원 횟수
               </th>
               <th className="text-left p-4 text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
                 관리자 지정
