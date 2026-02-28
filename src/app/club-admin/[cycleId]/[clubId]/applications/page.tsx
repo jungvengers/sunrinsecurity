@@ -58,6 +58,8 @@ export default async function ClubAdminApplicationsPage({
   const canChangeStatus =
     !!cycle.applyEndDate && new Date() >= new Date(cycle.applyEndDate);
 
+  const uniqueApplicantCount = new Set(applications.map((a) => a.userId)).size;
+
   return (
     <div>
       <div className="mb-6">
@@ -66,7 +68,7 @@ export default async function ClubAdminApplicationsPage({
         </p>
         <h1 className="text-2xl font-bold">{club.name} 지원서 관리</h1>
         <p className="text-[hsl(var(--muted-foreground))] mt-1">
-          총 {applications.length}명 지원
+          총 {uniqueApplicantCount}명 지원
         </p>
       </div>
 
