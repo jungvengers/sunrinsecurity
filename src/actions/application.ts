@@ -21,6 +21,7 @@ export async function submitApplication(formData: FormData) {
   const clubId = formData.get("clubId") as string;
   const formId = formData.get("formId") as string;
   const priority = Number(formData.get("priority"));
+  const applicantPhone = String(formData.get("applicantPhone") || "").trim();
 
   if (!roundId || !clubId || !formId) {
     return { success: false, error: "필수 정보가 누락되었습니다." };
@@ -28,6 +29,10 @@ export async function submitApplication(formData: FormData) {
 
   if (!Number.isInteger(priority) || priority < 1) {
     return { success: false, error: "지망 순위가 올바르지 않습니다." };
+  }
+
+  if (!applicantPhone) {
+    return { success: false, error: "전화번호를 입력해주세요." };
   }
 
   const round = await prisma.recruitmentRound.findUnique({
@@ -132,6 +137,9 @@ export async function submitApplication(formData: FormData) {
     ? (form.questions as unknown as Question[])
     : [];
   const answers: Record<string, string | string[]> = {};
+
+  answers.phone = applicantPhone;
+  answers.answer_phone = applicantPhone;
 
   for (const question of questions) {
     const rawAnswers = formData
