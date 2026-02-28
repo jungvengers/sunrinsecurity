@@ -17,19 +17,8 @@ interface HistoryApplication {
   };
 }
 
-const statusLabel: Record<HistoryApplication["status"], string> = {
-  PENDING: "심사 중",
-  ACCEPTED: "합격",
-  REJECTED: "불합격",
-  ALLOCATED: "배정됨",
-};
-
-const statusClass: Record<HistoryApplication["status"], string> = {
-  PENDING: "text-yellow-400 bg-yellow-400/10",
-  ACCEPTED: "text-green-400 bg-green-400/10",
-  REJECTED: "text-red-400 bg-red-400/10",
-  ALLOCATED: "text-blue-400 bg-blue-400/10",
-};
+const statusLabel = "심사 중";
+const statusClass = "text-yellow-400 bg-yellow-400/10";
 
 function normalizeAnswerValue(value: unknown): string {
   if (Array.isArray(value)) {
@@ -78,9 +67,9 @@ export function ApplicationHistory({
 
               <div className="flex items-center gap-2">
                 <span
-                  className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium ${statusClass[app.status]}`}
+                  className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium ${statusClass}`}
                 >
-                  {statusLabel[app.status]}
+                  {statusLabel}
                 </span>
                 {canCancel && app.status === "PENDING" && (
                   <button
