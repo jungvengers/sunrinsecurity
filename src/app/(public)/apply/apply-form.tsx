@@ -159,6 +159,18 @@ export function ApplyForm({
               <label className="block text-sm font-medium mb-2">학번</label>
               <Input value={user.studentId || ""} disabled />
             </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-2">
+                전화번호
+                <span className="text-[hsl(var(--destructive))] ml-1">*</span>
+              </label>
+              <Input
+                name="applicantPhone"
+                type="tel"
+                placeholder="예: 010-1234-5678"
+                required
+              />
+            </div>
           </div>
 
           {(selectedForm.questions as Question[]).map((question) => (
