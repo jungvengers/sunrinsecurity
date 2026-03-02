@@ -3,6 +3,7 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
@@ -23,6 +24,7 @@ import {
   ImageIcon,
   Type,
   Code2,
+  Link as LinkIcon,
 } from "lucide-react";
 import { useCallback, useState, useEffect, useRef } from "react";
 
@@ -53,11 +55,13 @@ export function TiptapEditor({
   const menuRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         codeBlock: false,
       }),
       Underline,
+      Link.configure({ openOnClick: false }),
       Image.configure({
         HTMLAttributes: {
           class: "rounded-lg max-w-full my-4",
@@ -268,6 +272,18 @@ export function TiptapEditor({
     }
   }, [editor]);
 
+  const setLink = useCallback(() => {
+    if (!editor) return;
+    const prev = editor.getAttributes("link").href;
+    const href = window.prompt("링크 URL을 입력하세요:", prev || "https://");
+    if (href === null) return;
+    if (href === "") {
+      editor.chain().focus().unsetLink().run();
+      return;
+    }
+    editor.chain().focus().setLink({ href }).run();
+  }, [editor]);
+
   if (!editor) {
     return (
       <div className="border border-[hsl(var(--border))] rounded-xl overflow-hidden bg-[hsl(var(--background))] min-h-[400px] animate-pulse" />
@@ -316,6 +332,14 @@ export function TiptapEditor({
           title="코드"
         >
           <Code className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={setLink}
+          className={`p-1.5 rounded hover:bg-[hsl(var(--secondary))] transition-colors ${editor.isActive("link") ? "bg-[hsl(var(--secondary))]" : ""}`}
+          title="링크"
+        >
+          <LinkIcon className="w-4 h-4" />
         </button>
 
         <div className="w-px h-5 bg-[hsl(var(--border))] mx-1" />
