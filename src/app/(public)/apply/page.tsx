@@ -4,10 +4,10 @@ import Link from "next/link";
 import { ApplyForm } from "./apply-form";
 import { PreviewForms } from "./preview-forms";
 import { ApplicationHistory } from "./application-history";
-import { formatCycleName } from "@/lib/utils";
+import { DeadlineCountdown } from "./deadline-countdown";
+import { formatCycleName, toEndOfMinute } from "@/lib/utils";
 import {
   Calendar,
-  Clock,
   CheckCircle2,
   XCircle,
   FileText,
@@ -89,6 +89,7 @@ export default async function ApplyPage() {
           applicationForms: {
             where: { isActive: true },
             include: { club: true },
+            orderBy: { club: { order: "asc" } },
           },
         },
       },
@@ -130,7 +131,9 @@ export default async function ApplyPage() {
   // 날짜 기반 상태 체크
   const viewStartDate = activeCycle.viewStartDate;
   const applyStartDate = activeCycle.applyStartDate;
-  const applyEndDate = activeCycle.applyEndDate;
+  const applyEndDate = activeCycle.applyEndDate
+    ? toEndOfMinute(new Date(activeCycle.applyEndDate))
+    : null;
 
   const isBeforeView = viewStartDate && now < viewStartDate;
   const isPreview =
@@ -223,10 +226,11 @@ export default async function ApplyPage() {
               {formatCycleName(cycle.year, cycle.name)}
             </span>
             {cycle.applyEndDate && (
-              <span className="inline-flex items-center gap-2 px-4 py-2 bg-[hsl(var(--card))] rounded-xl border border-[hsl(var(--border))]">
-                <Clock className="w-4 h-4" />
-                마감: {new Date(cycle.applyEndDate).toLocaleString("ko-KR")}
-              </span>
+              <DeadlineCountdown
+                applyEndDateIso={
+                  new Date(cycle.applyEndDate).toISOString()
+                }
+              />
             )}
           </div>
         </div>

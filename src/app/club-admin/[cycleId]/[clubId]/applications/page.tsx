@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import { ClubApplicationManager } from "./application-manager";
-import { formatCycleName } from "@/lib/utils";
+import { formatCycleName, toEndOfMinute } from "@/lib/utils";
 
 export default async function ClubAdminApplicationsPage({
   params,
@@ -56,7 +56,8 @@ export default async function ClubAdminApplicationsPage({
   const isReadOnly = cycle.status === "COMPLETED";
   const hasAllocated = applications.some((app) => app.status === "ALLOCATED");
   const canChangeStatus =
-    !!cycle.applyEndDate && new Date() >= new Date(cycle.applyEndDate);
+    !!cycle.applyEndDate &&
+    new Date() >= toEndOfMinute(new Date(cycle.applyEndDate));
 
   const uniqueApplicantCount = new Set(applications.map((a) => a.userId)).size;
 

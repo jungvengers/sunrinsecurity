@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
+import { toEndOfMinute } from "@/lib/utils";
 
 function toLocalDatetimeValue(date: Date | null | undefined): string {
   if (!date) return "";
@@ -118,7 +119,9 @@ export function CycleDetail({ cycle, clubs }: { cycle: Cycle; clubs: Club[] }) {
   const applyStartDate = cycle.applyStartDate
     ? new Date(cycle.applyStartDate)
     : null;
-  const applyEndDate = cycle.applyEndDate ? new Date(cycle.applyEndDate) : null;
+  const applyEndDate = cycle.applyEndDate
+    ? toEndOfMinute(new Date(cycle.applyEndDate))
+    : null;
 
   const getCurrentStatus = () => {
     if (!viewStartDate || !applyStartDate || !applyEndDate) {
@@ -545,7 +548,9 @@ function RoundCard({
   const applyStartDate = cycle.applyStartDate
     ? new Date(cycle.applyStartDate)
     : null;
-  const applyEndDate = cycle.applyEndDate ? new Date(cycle.applyEndDate) : null;
+  const applyEndDate = cycle.applyEndDate
+    ? toEndOfMinute(new Date(cycle.applyEndDate))
+    : null;
 
   const getCurrentStatus = () => {
     if (!viewStartDate || !applyStartDate || !applyEndDate) {

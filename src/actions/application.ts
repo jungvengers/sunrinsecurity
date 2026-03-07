@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { writeAuditLog } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
+import { toEndOfMinute } from "@/lib/utils";
 
 export async function submitApplication(formData: FormData) {
   const session = await auth();
@@ -46,7 +47,9 @@ export async function submitApplication(formData: FormData) {
 
   const now = new Date();
   const applyStartDate = round.cycle.applyStartDate;
-  const applyEndDate = round.cycle.applyEndDate;
+  const applyEndDate = round.cycle.applyEndDate
+    ? toEndOfMinute(new Date(round.cycle.applyEndDate))
+    : null;
 
   if (!applyStartDate || !applyEndDate) {
     return { success: false, error: "지원 기간이 설정되지 않았습니다." };
@@ -225,7 +228,9 @@ export async function cancelApplication(applicationId: string) {
   }
 
   const now = new Date();
-  const applyEndDate = application.round.cycle.applyEndDate;
+  const applyEndDate = application.round.cycle.applyEndDate
+    ? toEndOfMinute(new Date(application.round.cycle.applyEndDate))
+    : null;
   if (!applyEndDate || now > applyEndDate) {
     return { success: false, error: "지원 마감 이후에는 취소할 수 없습니다." };
   }

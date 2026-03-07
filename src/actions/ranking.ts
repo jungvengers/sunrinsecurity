@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { toEndOfMinute } from "@/lib/utils";
 
 export async function updateApplicationRank(
   applicationId: string,
@@ -112,10 +113,10 @@ export async function updateApplicationStatus(
     return { success: false, error: "권한이 없습니다." };
   }
 
-  if (
-    !application.round.cycle.applyEndDate ||
-    new Date() < application.round.cycle.applyEndDate
-  ) {
+  const applyEndDate = application.round.cycle.applyEndDate
+    ? toEndOfMinute(new Date(application.round.cycle.applyEndDate))
+    : null;
+  if (!applyEndDate || new Date() < applyEndDate) {
     return {
       success: false,
       error: "지원 마감 이후에만 합격/불합격 상태를 변경할 수 있습니다.",

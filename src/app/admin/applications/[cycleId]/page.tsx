@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { ApplicationManager } from "./application-manager";
-import { formatCycleName } from "@/lib/utils";
+import { formatCycleName, toEndOfMinute } from "@/lib/utils";
 
 export default async function CycleApplicationsPage({
   params,
@@ -69,7 +69,8 @@ export default async function CycleApplicationsPage({
         applications={applications}
         cycleStatus={cycle.status}
         canChangeStatus={
-          !!cycle.applyEndDate && new Date() >= new Date(cycle.applyEndDate)
+          !!cycle.applyEndDate &&
+          new Date() >= toEndOfMinute(new Date(cycle.applyEndDate))
         }
       />
     </div>

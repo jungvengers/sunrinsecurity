@@ -12,3 +12,12 @@ export function formatCycleName(year: number, name: string) {
     : name.trim();
   return `${yearPrefix} ${normalizedName}`.trim();
 }
+
+// 마감 시각을 해당 분의 끝(59.999초)으로 보정
+export function toEndOfMinute(date: Date): Date {
+  const d = new Date(date);
+  if (d.getSeconds() === 0 && d.getMilliseconds() === 0) {
+    d.setSeconds(59, 999);
+  }
+  return d;
+}
