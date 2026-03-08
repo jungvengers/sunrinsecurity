@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import { UserSearchForm } from "./user-search-form";
 
 const roleLabel: Record<string, string> = {
   ADMIN: "관리자",
@@ -6,8 +8,28 @@ const roleLabel: Record<string, string> = {
   STUDENT: "학생",
 };
 
-export default async function AdminUsersPage() {
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; grade?: string }>;
+}) {
+  const { q, grade } = await searchParams;
+
+  const where: Prisma.UserWhereInput = {};
+  if (q?.trim()) {
+    const term = q.trim();
+    where.OR = [
+      { name: { contains: term, mode: "insensitive" } },
+      { email: { contains: term, mode: "insensitive" } },
+      { studentId: { contains: term, mode: "insensitive" } },
+    ];
+  }
+  if (grade !== undefined && grade !== "" && !Number.isNaN(Number(grade))) {
+    where.grade = Number(grade);
+  }
+
   const users = await prisma.user.findMany({
+    where,
     orderBy: [{ role: "asc" }, { name: "asc" }],
     include: {
       _count: {
@@ -25,6 +47,13 @@ export default async function AdminUsersPage() {
         <p className="text-sm text-[hsl(var(--muted-foreground))] mb-1">Users</p>
         <h1 className="text-2xl font-bold">사용자</h1>
       </div>
+
+      <UserSearchForm
+        key={`${q ?? ""}-${grade ?? ""}`}
+        defaultQ={q}
+        defaultGrade={grade ?? ""}
+        className="mb-6"
+      />
 
       <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl overflow-hidden">
         <table className="w-full">

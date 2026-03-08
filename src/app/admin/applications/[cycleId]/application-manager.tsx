@@ -71,6 +71,19 @@ const statusColors: Record<string, string> = {
   ALLOCATED: "bg-blue-500/20 text-blue-400",
 };
 
+function getAnswerLength(
+  answers: Record<string, unknown>,
+  questionId: string
+): number {
+  const value = answers[questionId] ?? answers[`answer_${questionId}`];
+  const normalize = (s: string) => s.replace(/\r\n|\r|\n/g, "");
+  if (typeof value === "string") return normalize(value).length;
+  if (Array.isArray(value))
+    return normalize(value.map((v) => String(v)).join(", ")).length;
+  if (value != null) return normalize(String(value)).length;
+  return 0;
+}
+
 export function ApplicationManager({
   cycleId,
   clubs,
@@ -394,8 +407,11 @@ function ApplicationRow({
               <h4 className="font-medium">지원서 내용</h4>
               {questions.map((q) => (
                 <div key={q.id}>
-                  <p className="text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                    {q.label}
+                  <p className="text-sm text-[hsl(var(--muted-foreground))] mb-1 flex items-center justify-between">
+                    <span>{q.label}</span>
+                    <span className="text-xs text-[hsl(var(--muted-foreground))]">
+                      {getAnswerLength(answers, q.id)}자 (띄어쓰기 포함)
+                    </span>
                   </p>
                   <p className="bg-[hsl(var(--background))] rounded-lg p-3">
                     {renderAnswer(q.id)}
@@ -407,7 +423,9 @@ function ApplicationRow({
                   <p className="text-sm text-[hsl(var(--muted-foreground))]">기타 답변</p>
                   {fallbackAnswers.map(([key, value]) => (
                     <div key={key}>
-                      <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">{key}</p>
+                      <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">
+                        {key}
+                      </p>
                       <p className="bg-[hsl(var(--background))] rounded-lg p-3">
                         {Array.isArray(value)
                           ? value.join(", ")
