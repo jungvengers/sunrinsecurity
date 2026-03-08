@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,8 +70,16 @@ export function ApplyForm({
   const [priority, setPriority] = useState<number>(
     existingApplications.length + 1
   );
+  const [answers, setAnswers] = useState<Record<string, string>>({});
 
   const selectedForm = availableForms.find((f) => f.clubId === selectedClubId);
+
+  useEffect(() => {
+    setAnswers({});
+  }, [selectedClubId]);
+
+  const getDisplayLength = (text: string) =>
+    text.replace(/\r\n|\r|\n/g, "").length;
 
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(
     async (_prevState, formData) => {
@@ -173,7 +181,9 @@ export function ApplyForm({
             </div>
           </div>
 
-          {(selectedForm.questions as Question[]).map((question) => (
+          {(selectedForm.questions as Question[]).map((question) => {
+            const value = answers[question.id] ?? "";
+            return (
             <div key={question.id}>
               <label className="block text-sm font-medium mb-2">
                 {question.label}
@@ -183,20 +193,44 @@ export function ApplyForm({
               </label>
 
               {question.type === "TEXT" && (
-                <Input
-                  name={`answer_${question.id}`}
-                  placeholder={question.placeholder}
-                  required={question.required}
-                />
+                <>
+                  <Input
+                    name={`answer_${question.id}`}
+                    placeholder={question.placeholder}
+                    required={question.required}
+                    value={value}
+                    onChange={(e) =>
+                      setAnswers((prev) => ({
+                        ...prev,
+                        [question.id]: e.target.value,
+                      }))
+                    }
+                  />
+                  <p className="mt-1.5 text-xs text-[hsl(var(--muted-foreground))] text-right">
+                    {getDisplayLength(value)}자 (띄어쓰기 포함)
+                  </p>
+                </>
               )}
 
               {question.type === "TEXTAREA" && (
-                <Textarea
-                  name={`answer_${question.id}`}
-                  placeholder={question.placeholder}
-                  required={question.required}
-                  rows={5}
-                />
+                <>
+                  <Textarea
+                    name={`answer_${question.id}`}
+                    placeholder={question.placeholder}
+                    required={question.required}
+                    rows={5}
+                    value={value}
+                    onChange={(e) =>
+                      setAnswers((prev) => ({
+                        ...prev,
+                        [question.id]: e.target.value,
+                      }))
+                    }
+                  />
+                  <p className="mt-1.5 text-xs text-[hsl(var(--muted-foreground))] text-right">
+                    {getDisplayLength(value)}자 (띄어쓰기 포함)
+                  </p>
+                </>
               )}
 
               {question.type === "SELECT" && (
@@ -253,7 +287,8 @@ export function ApplyForm({
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
 
           {state?.error && (
             <p className="text-[hsl(var(--destructive))] text-sm">

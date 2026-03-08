@@ -192,21 +192,31 @@ export function ClubFormBuilder({
             </p>
           ) : (
             <div className="space-y-8">
-              {questions.map((question, index) => (
+              {questions.map((question) => (
                 <div key={question.id}>
                   <label className="block text-sm font-medium mb-2">
-                    {index + 1}. {question.label || "질문 제목"}
+                    {question.label || "질문 제목"}
                     {question.required && (
                       <span className="text-red-400 ml-1">*</span>
                     )}
                   </label>
 
                   {question.type === "TEXT" && (
-                    <Input placeholder={question.placeholder || "답변을 입력하세요"} disabled />
+                    <>
+                      <Input placeholder={question.placeholder || "답변을 입력하세요"} disabled />
+                      <p className="mt-1.5 text-xs text-[hsl(var(--muted-foreground))] text-right">
+                        0자 (띄어쓰기 포함)
+                      </p>
+                    </>
                   )}
 
                   {question.type === "TEXTAREA" && (
-                    <Textarea placeholder={question.placeholder || "답변을 입력하세요"} rows={4} disabled />
+                    <>
+                      <Textarea placeholder={question.placeholder || "답변을 입력하세요"} rows={4} disabled />
+                      <p className="mt-1.5 text-xs text-[hsl(var(--muted-foreground))] text-right">
+                        0자 (띄어쓰기 포함)
+                      </p>
+                    </>
                   )}
 
                   {question.type === "SELECT" && (
