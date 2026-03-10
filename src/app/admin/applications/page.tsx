@@ -26,6 +26,16 @@ export default async function ApplicationsPage() {
     orderBy: { year: "desc" },
   });
 
+  const roundIds = cycles.map((c) => c.rounds[0]?.id).filter(Boolean) as string[];
+  const uniqueByRound: Record<string, number> = {};
+  if (roundIds.length) {
+    const rows = await prisma.application.groupBy({
+      by: ["roundId", "userId"],
+      where: { roundId: { in: roundIds } },
+    });
+    rows.forEach((r) => (uniqueByRound[r.roundId] = (uniqueByRound[r.roundId] ?? 0) + 1));
+  }
+
   return (
     <div>
       <div className="mb-6">
@@ -67,12 +77,17 @@ export default async function ApplicationsPage() {
                   <ArrowRight className="w-4 h-4 text-[hsl(var(--muted-foreground))] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <h2 className="font-semibold mb-1">{formatCycleName(cycle.year, cycle.name)}</h2>
-                <p className="text-2xl font-bold mt-3">
-                  {cycle.rounds[0]?._count.applications || 0}
-                  <span className="text-sm font-normal text-[hsl(var(--muted-foreground))] ml-1">
-                    명 지원
+                <div className="flex items-baseline justify-between gap-2 mt-3">
+                  <p className="text-2xl font-bold">
+                    {cycle.rounds[0] ? uniqueByRound[cycle.rounds[0].id] ?? 0 : 0}
+                    <span className="text-sm font-normal text-[hsl(var(--muted-foreground))] ml-1">
+                      명 지원
+                    </span>
+                  </p>
+                  <span className="text-sm text-[hsl(var(--muted-foreground))] shrink-0">
+                    총 {cycle.rounds[0]?._count.applications ?? 0}건
                   </span>
-                </p>
+                </div>
               </Link>
             );
           })}

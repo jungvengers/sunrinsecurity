@@ -55,6 +55,12 @@ export default async function AdminUsersPage({
         className="mb-6"
       />
 
+      <p className="text-sm text-[hsl(var(--muted-foreground))] mb-3">
+        {q?.trim() || (grade !== undefined && grade !== "" && !Number.isNaN(Number(grade)))
+          ? `검색 결과 ${users.length}명`
+          : `총 ${users.length}명`}
+      </p>
+
       <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl overflow-hidden">
         <table className="w-full">
           <thead>
